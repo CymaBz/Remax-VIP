@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RE/MAX VIP Belize - Discover Your Dream Property in Paradise</title>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-functions-compat.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            overflow-x: hidden;
+        }
+
+        /* RE/MAX Brand Colors */
+        :root {
+            --remax-red: #E31E24;
+            --remax-blue: #003DA5;
+            --remax-white: #FFFFFF;
+            --remax-gray: #6C757D;
+            --remax-light-gray: #F8F9FA;
+            --remax-dark: #212529;
+            --remax-gold: #FFD700;
+            --remax-tropical-green: #28A745;
+        }
+
+        /* Header */
+        header {
+            background: var(--remax-blue);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+            padding: 1rem 0;
+        }
+
+        .header-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 2rem;
+        }
+
+        .logo {
+            height: 50px;
+            width: auto;
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--remax-dark);
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--remax-red);
+        }
+
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('images/hero.jpg');
+            background-size: cover;
+            background-position: center;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: var(--remax-white);
+            margin-top: 80px;
+        }
+
+        .hero-content {
+            max-width: 800px;
+            padding: 0 2rem;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            font-weight: 700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .hero p {
+            font-size: 1.3rem;
+            margin-bottom: 2rem;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+
+        .cta-button {
+            background: var(--remax-red);
+            color: var(--remax-white);
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .cta-button:hover {
+            background: #c41a1f;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(227, 30, 36, 0.4);
+        }
+
+        /* Sections */
+        .section {
+            padding: 5rem 2rem;
+        }
+
+        .section-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section h2 {
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+            text-align: center;
+            color: var(--remax-dark);
+        }
+
+        .section h3 {
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+            color: var(--remax-blue);
+        }
+
+        /* Why Belize Section */
+        .why-belize {
+            background: var(--remax-light-gray);
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .feature-card {
+            background: var(--remax-white);
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: var(--remax-red);
+        }
+
+        /* Property Types Section */
+        .property-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .property-card {
+            background: var(--remax-white);
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .property-card:hover {
+            transform: translateY(-10px);
+        }
+
+        .property-image {
+            height: 250px;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .property-content {
+            padding: 2rem;
+        }
+
+        .property-content h4 {
+            color: var(--remax-blue);
+            margin-bottom: 1rem;
+        }
+
+        /* RE/MAX VIP Section */
+        .why-remax {
+            background: linear-gradient(135deg, var(--remax-blue), var(--remax-red));
+            color: var(--remax-white);
+        }
+
+        .why-remax h2 {
+            color: var(--remax-white);
+        }
+
+        .remax-features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .remax-feature {
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .remax-feature h4 {
+            color: var(--remax-gold);
+            margin-bottom: 1rem;
+        }
+
+        /* Contact Form Section */
+        .contact-section {
+            background: var(--remax-light-gray);
+        }
+
+        .form-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: var(--remax-white);
+            padding: 3rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgb(0, 62, 133);
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--remax-dark);
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--remax-blue);
+        }
+
+        .submit-btn {
+            background: var(--remax-red);
+            color: var(--remax-white);
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+
+        .submit-btn:hover {
+            background: #c41a1f;
+            transform: translateY(-2px);
+        }
+
+        .submit-btn:disabled {
+            background: var(--remax-gray);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Footer */
+        footer {
+            background: var(--remax-blue);
+            color: var(--remax-white);
+            padding: 3rem 2rem 1rem;
+        }
+
+        .footer-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .footer-section h4 {
+            color: var(--remax-gold);
+            margin-bottom: 1rem;
+        }
+
+        .footer-section p,
+        .footer-section a {
+            color: #ccc;
+            text-decoration: none;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .footer-section a:hover {
+            color: var(--remax-gold);
+        }
+
+        .footer-bottom {
+            text-align: center;
+            padding-top: 2rem;
+            border-top: 1px solid #003f92;
+        }
+
+        .admin-link {
+            background: var(--remax-red);
+            color: var(--remax-white);
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .admin-link:hover {
+            background: #c41a1f;
+            transform: translateY(-2px);
+        }
+
+        /* Loading and Success States */
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 1rem;
+        }
+
+        .success-message {
+            display: none;
+            background: var(--remax-tropical-green);
+            color: var(--remax-white);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+            text-align: center;
+        }
+
+        .error-message {
+            display: none;
+            background: var(--remax-red);
+            color: var(--remax-white);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+            text-align: center;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .hero p {
+                font-size: 1.1rem;
+            }
+
+            .section h2 {
+                font-size: 2rem;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            .form-container {
+                padding: 2rem;
+                margin: 0 1rem;
+            }
+
+            .property-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .hero h1 {
+                font-size: 2rem;
+            }
+
+            .section {
+                padding: 3rem 1rem;
+            }
+
+            .form-container {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="header-container">
+            <img src="images/logo.png" alt="RE/MAX VIP Belize" class="logo">
+            <nav>
+                <ul class="nav-links">
+                    <li><a href="#why-belize">Why Belize?</a></li>
+                    <li><a href="#properties">Properties</a></li>
+                    <li><a href="#why-remax">Why RE/MAX VIP?</a></li>
+                    <li><a href="#contact">Contact</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1>Discover Your Dream Property in Belize!</h1>
+            <p>Live the dream in paradise with RE/MAX VIP Belize. From beachfront condos to private islands, find your perfect piece of paradise.</p>
+            <a href="#contact" class="cta-button">Find My Belize Dream Home!</a>
+        </div>
+    </section>
+
+    <!-- Why Belize Section -->
+    <section id="why-belize" class="section why-belize">
+        <div class="section-container">
+            <h2>Why Belize?</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🌴</div>
+                    <h3>Relaxed Lifestyle</h3>
+                    <p>Experience the friendly culture and laid-back atmosphere that makes Belize the perfect place to call home.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🏝️</div>
+                    <h3>Natural Beauty</h3>
+                    <p>From pristine beaches to lush jungles and the world's second-largest barrier reef, Belize offers stunning natural landscapes.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">💰</div>
+                    <h3>Investment Friendly</h3>
+                    <p>Favorable investment environment with no capital gains tax and a low cost of living compared to other Caribbean destinations.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🌍</div>
+                    <h3>Foreigner Friendly</h3>
+                    <p>Belize welcomes foreign investors with open arms, offering straightforward property ownership and residency options.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Property Types Section -->
+    <section id="properties" class="section">
+        <div class="section-container">
+            <h2>Types of Property Available</h2>
+            <div class="property-grid">
+                <div class="property-card">
+                    <div class="property-image" style="background-image: url('images/condo.jpg');"></div>
+                    <div class="property-content">
+                        <h4>Beachfront Homes & Condos</h4>
+                        <p>Wake up to ocean views every day with our selection of beachfront properties. Perfect for vacation homes or permanent residence.</p>
+                    </div>
+                </div>
+                <div class="property-card">
+                    <div class="property-image" style="background-image: url('images/hero.jpg');"></div>
+                    <div class="property-content">
+                        <h4>Private Island Opportunities</h4>
+                        <p>Own your own piece of paradise with exclusive private island properties. The ultimate in luxury and privacy.</p>
+                    </div>
+                </div>
+                <div class="property-card">
+                    <div class="property-image" style="background-image: url('images/residential.jpg');"></div>
+                    <div class="property-content">
+                        <h4>Mainland Residences</h4>
+                        <p>Beautiful homes in established communities with modern amenities and easy access to all Belize has to offer.</p>
+                    </div>
+                </div>
+                <div class="property-card">
+                    <div class="property-image" style="background-image: url('images/land.jpg');"></div>
+                    <div class="property-content">
+                        <h4>Investment Properties</h4>
+                        <p>From rental properties to commercial investments, build your portfolio with high-potential real estate opportunities.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Why RE/MAX VIP Section -->
+    <section id="why-remax" class="section why-remax">
+        <div class="section-container">
+            <h2>Why Choose RE/MAX VIP?</h2>
+            <div class="remax-features">
+                <div class="remax-feature">
+                    <h4>Local Expertise</h4>
+                    <p>Our team has deep local knowledge and trusted relationships throughout Belize's real estate market.</p>
+                </div>
+                <div class="remax-feature">
+                    <h4>Comprehensive Listings</h4>
+                    <p>Access to the most extensive property database in Belize, from affordable condos to luxury estates.</p>
+                </div>
+                <div class="remax-feature">
+                    <h4>Seamless Process</h4>
+                    <p>We guide you through every step of the purchasing process, making your dream of owning in Belize a reality.</p>
+                </div>
+                <div class="remax-feature">
+                    <h4>Global Brand</h4>
+                    <p>Backed by the world's most trusted real estate brand, RE/MAX, with over 40 years of excellence.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Form Section -->
+    <section id="contact" class="section contact-section">
+        <div class="section-container">
+            <h2>Get Expert Advice on Belize Real Estate</h2>
+            <div class="form-container">
+                <form id="propertyForm">
+                    <div class="form-group">
+                        <label for="name">Full Name *</label>
+                        <input type="text" id="name" name="name" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="phone">Phone Number *</label>
+                        <input type="tel" id="phone" name="phone" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="email">Email Address *</label>
+                        <input type="email" id="email" name="email" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="propertyType">What type of property are you looking for? *</label>
+                        <select id="propertyType" name="propertyType" required>
+                            <option value="">Select property type</option>
+                            <option value="Beachfront">Beachfront</option>
+                            <option value="Island">Island</option>
+                            <option value="Mainland">Mainland</option>
+                            <option value="Residential Home">Residential Home</option>
+                            <option value="Condo/Apartment">Condo/Apartment</option>
+                            <option value="Land">Land</option>
+                            <option value="Commercial">Commercial</option>
+                            <option value="Investment Property">Investment Property</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="timeframe">When are you looking to purchase? *</label>
+                        <select id="timeframe" name="timeframe" required>
+                            <option value="">Select timeframe</option>
+                            <option value="Immediately">Immediately</option>
+                            <option value="1-3 Months">1-3 Months</option>
+                            <option value="3-6 Months">3-6 Months</option>
+                            <option value="6-12 Months">6-12 Months</option>
+                            <option value="1+ Year">1+ Year</option>
+                            <option value="Just Browse">Just Browse</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="budget">What is your estimated budget (USD)? *</label>
+                        <select id="budget" name="budget" required>
+                            <option value="">Select budget range</option>
+                            <option value="Under $100K">Under $100K</option>
+                            <option value="$100K - $250K">$100K - $250K</option>
+                            <option value="$250K - $500K">$250K - $500K</option>
+                            <option value="$500K - $1M">$500K - $1M</option>
+                            <option value="$1M+">$1M+</option>
+                        </select>
+                    </div>
+                    
+                    <button type="submit" class="submit-btn" id="submitBtn">
+                        Find My Belize Dream Home!
+                    </button>
+                </form>
+                
+                <div class="loading" id="loading">
+                    <p>Submitting your inquiry...</p>
+                </div>
+                
+                <div class="success-message" id="successMessage">
+                    <p>Thank you! Your inquiry has been submitted successfully. We'll contact you soon!</p>
+                </div>
+                
+                <div class="error-message" id="errorMessage">
+                    <p>Sorry, there was an error submitting your inquiry. Please try again.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-container">
+            <div class="footer-section">
+                <h4>RE/MAX VIP Belize</h4>
+                <p>Your trusted partner in Belize real estate. Discover paradise with the world's most trusted real estate brand.</p>
+            </div>
+            
+            <div class="footer-section">
+                <h4>Contact Info</h4>
+                <p>Email: chris@remaxvipbelize.com</p>
+                <p>Phone: +501 615-7981</p>
+                <p>Address: jaguar Lanes Maya Beach, Stann Creek Belize</p>
+            </div>
+            
+            <div class="footer-section">
+                <h4>Quick Links</h4>
+                <a href="#why-belize">Why Belize?</a>
+                <a href="#properties">Properties</a>
+                <a href="#why-remax">Why RE/MAX VIP?</a>
+                <a href="#contact">Contact</a>
+            </div>
+            
+            <div class="footer-section">
+                <h4>Admin Access</h4>
+                <a href="admin.html" class="admin-link">Admin Login</a>
+                <p>Manage affiliates and create custom links</p>
+            </div>
+        </div>
+        
+        <div class="footer-bottom">
+            <p>&copy; 2024 RE/MAX VIP Belize. All rights reserved. Developed by Cyma Digital</p>
+        </div>
+    </footer>
+
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyB52c9xY0eH7fOy0B0D53_2jxnSurigS1M",
+            authDomain: "vip-affiliates-d265a.firebaseapp.com",
+            projectId: "vip-affiliates-d265a",
+            storageBucket: "vip-affiliates-d265a.appspot.com",
+            messagingSenderId: "556620380247",
+            appId: "1:556620380247:web:affiliate-system"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const functions = firebase.functions();
+
+        // Get affiliate ID from URL parameters
+        function getAffiliateId() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('affiliate') || 'direct';
+        }
+
+        // Store affiliate ID in session storage for form submission
+        const affiliateId = getAffiliateId();
+        sessionStorage.setItem('affiliateId', affiliateId);
+
+        // Form submission handler
+        document.getElementById('propertyForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const loading = document.getElementById('loading');
+            const successMessage = document.getElementById('successMessage');
+            const errorMessage = document.getElementById('errorMessage');
+            
+            // Get form data
+            const formData = {
+                name: document.getElementById('name').value,
+                phone: document.getElementById('phone').value,
+                email: document.getElementById('email').value,
+                propertyType: document.getElementById('propertyType').value,
+                timeframe: document.getElementById('timeframe').value,
+                budget: document.getElementById('budget').value,
+                affiliateId: sessionStorage.getItem('affiliateId'),
+                timestamp: new Date().toISOString(),
+                userAgent: navigator.userAgent,
+                referrer: document.referrer
+            };
+            
+            // Show loading state
+            submitBtn.disabled = true;
+            loading.style.display = 'block';
+            successMessage.style.display = 'none';
+            errorMessage.style.display = 'none';
+            
+            try {
+                // Call Firebase Cloud Function to handle form submission
+                const submitLead = functions.httpsCallable('submitLead');
+                const result = await submitLead(formData);
+                
+                // Show success message
+                loading.style.display = 'none';
+                successMessage.style.display = 'block';
+                
+                // Reset form
+                document.getElementById('propertyForm').reset();
+                
+                // Re-enable submit button after 3 seconds
+                setTimeout(() => {
+                    submitBtn.disabled = false;
+                    successMessage.style.display = 'none';
+                }, 3000);
+                
+            } catch (error) {
+                console.error('Error submitting form:', error);
+                
+                // Show error message
+                loading.style.display = 'none';
+                errorMessage.style.display = 'block';
+                
+                // Re-enable submit button
+                submitBtn.disabled = false;
+                
+                // Hide error message after 5 seconds
+                setTimeout(() => {
+                    errorMessage.style.display = 'none';
+                }, 5000);
+            }
+        });
+
+        // Smooth scrolling for navigation links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Header scroll effect
+        window.addEventListener('scroll', function() {
+            const header = document.querySelector('header');
+            if (window.scrollY > 100) {
+                header.style.background = 'rgba(255, 255, 255, 0.95)';
+                header.style.backdropFilter = 'blur(10px)';
+            } else {
+                header.style.background = 'var(--remax-white)';
+                header.style.backdropFilter = 'none';
+            }
+        });
+
+        // Form validation
+        function validateForm() {
+            const requiredFields = ['name', 'phone', 'email', 'propertyType', 'timeframe', 'budget'];
+            let isValid = true;
+            
+            requiredFields.forEach(fieldId => {
+                const field = document.getElementById(fieldId);
+                if (!field.value.trim()) {
+                    field.style.borderColor = 'var(--remax-red)';
+                    isValid = false;
+                } else {
+                    field.style.borderColor = '#e9ecef';
+                }
+            });
+            
+            return isValid;
+        }
+
+        // Add validation on form submission
+        document.getElementById('propertyForm').addEventListener('submit', function(e) {
+            if (!validateForm()) {
+                e.preventDefault();
+                alert('Please fill in all required fields.');
+            }
+        });
+
+        // Real-time validation
+        document.querySelectorAll('#propertyForm input, #propertyForm select').forEach(field => {
+            field.addEventListener('blur', function() {
+                if (this.hasAttribute('required') && !this.value.trim()) {
+                    this.style.borderColor = 'var(--remax-red)';
+                } else {
+                    this.style.borderColor = '#e9ecef';
+                }
+            });
+        });
+    </script>
+</body>
+</html> 

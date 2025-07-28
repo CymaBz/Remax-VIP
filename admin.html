@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RE/MAX VIP Belize - Admin Panel</title>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f8f9fa;
+        }
+
+        /* RE/MAX Brand Colors */
+        :root {
+            --remax-red: #E31E24;
+            --remax-blue: #003DA5;
+            --remax-white: #FFFFFF;
+            --remax-gray: #6C757D;
+            --remax-light-gray: #F8F9FA;
+            --remax-dark: #212529;
+            --remax-gold: #FFD700;
+            --remax-tropical-green: #28A745;
+        }
+
+        /* Login Section */
+        .login-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--remax-blue), var(--remax-red));
+        }
+
+        .login-form {
+            background: var(--remax-white);
+            padding: 3rem;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .login-form h2 {
+            text-align: center;
+            margin-bottom: 2rem;
+            color: var(--remax-dark);
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--remax-dark);
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--remax-blue);
+        }
+
+        .login-btn {
+            background: var(--remax-red);
+            color: var(--remax-white);
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+
+        .login-btn:hover {
+            background: #c41a1f;
+        }
+
+        /* Admin Dashboard */
+        .admin-dashboard {
+            display: none;
+            min-height: 100vh;
+        }
+
+        .admin-header {
+            background: var(--remax-dark);
+            color: var(--remax-white);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .admin-header h1 {
+            font-size: 1.5rem;
+        }
+
+        .logout-btn {
+            background: var(--remax-red);
+            color: var(--remax-white);
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .logout-btn:hover {
+            background: #c41a1f;
+        }
+
+        .admin-content {
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .admin-tabs {
+            display: flex;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            padding: 1rem 2rem;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--remax-gray);
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn.active {
+            color: var(--remax-red);
+            border-bottom: 3px solid var(--remax-red);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Affiliate Management */
+        .affiliate-form {
+            background: var(--remax-white);
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .submit-btn {
+            background: var(--remax-tropical-green);
+            color: var(--remax-white);
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .submit-btn:hover {
+            background: #218838;
+        }
+
+        /* Affiliate List */
+        .affiliate-list {
+            background: var(--remax-white);
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .affiliate-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .affiliate-table th,
+        .affiliate-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .affiliate-table th {
+            background: var(--remax-light-gray);
+            font-weight: 600;
+            color: var(--remax-dark);
+        }
+
+        .affiliate-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .copy-link {
+            background: var(--remax-blue);
+            color: var(--remax-white);
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background 0.3s ease;
+        }
+
+        .copy-link:hover {
+            background: #002d7a;
+        }
+
+        .delete-btn {
+            background: var(--remax-red);
+            color: var(--remax-white);
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background 0.3s ease;
+        }
+
+        .delete-btn:hover {
+            background: #c41a1f;
+        }
+
+        /* Lead Management */
+        .lead-filters {
+            background: var(--remax-white);
+            padding: 1.5rem;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+
+        .filter-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            align-items: end;
+        }
+
+        .filter-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--remax-dark);
+        }
+
+        .filter-group select,
+        .filter-group input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e9ecef;
+            border-radius: 5px;
+            font-size: 0.9rem;
+        }
+
+        .export-btn {
+            background: var(--remax-gold);
+            color: var(--remax-dark);
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s ease;
+        }
+
+        .export-btn:hover {
+            background: #e6c200;
+        }
+
+        .lead-table {
+            background: var(--remax-white);
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .lead-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .lead-table th,
+        .lead-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #e9ecef;
+            font-size: 0.9rem;
+        }
+
+        .lead-table th {
+            background: var(--remax-light-gray);
+            font-weight: 600;
+            color: var(--remax-dark);
+        }
+
+        .lead-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        /* Stats Dashboard */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--remax-white);
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--remax-red);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: var(--remax-gray);
+            font-weight: 600;
+        }
+
+        /* Messages */
+        .message {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .success {
+            background: var(--remax-tropical-green);
+            color: var(--remax-white);
+        }
+
+        .error {
+            background: var(--remax-red);
+            color: var(--remax-white);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .admin-content {
+                padding: 1rem;
+            }
+
+            .admin-tabs {
+                flex-direction: column;
+            }
+
+            .tab-btn {
+                text-align: left;
+                border-bottom: 1px solid #e9ecef;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .filter-row {
+                grid-template-columns: 1fr;
+            }
+
+            .affiliate-table,
+            .lead-table table {
+                font-size: 0.8rem;
+            }
+
+            .affiliate-table th,
+            .affiliate-table td,
+            .lead-table th,
+            .lead-table td {
+                padding: 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Section -->
+    <div id="loginSection" class="login-container">
+        <div class="login-form">
+            <h2>RE/MAX VIP Admin Login</h2>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" required>
+                </div>
+                <button type="submit" class="login-btn">Login</button>
+            </form>
+            <div id="loginMessage"></div>
+        </div>
+    </div>
+
+    <!-- Admin Dashboard -->
+    <div id="adminDashboard" class="admin-dashboard">
+        <header class="admin-header">
+            <h1>RE/MAX VIP Belize - Admin Panel</h1>
+            <button class="logout-btn" onclick="logout()">Logout</button>
+        </header>
+
+        <div class="admin-content">
+            <!-- Stats Dashboard -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalLeads">0</div>
+                    <div class="stat-label">Total Leads</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="totalAffiliates">0</div>
+                    <div class="stat-label">Active Affiliates</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="monthlyLeads">0</div>
+                    <div class="stat-label">Leads This Month</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="conversionRate">0%</div>
+                    <div class="stat-label">Conversion Rate</div>
+                </div>
+            </div>
+
+            <!-- Admin Tabs -->
+            <div class="admin-tabs">
+                <button class="tab-btn active" onclick="showTab('affiliates')">Affiliate Management</button>
+                <button class="tab-btn" onclick="showTab('leads')">Lead Management</button>
+                <button class="tab-btn" onclick="showTab('analytics')">Analytics</button>
+            </div>
+
+            <!-- Affiliate Management Tab -->
+            <div id="affiliatesTab" class="tab-content active">
+                <div class="affiliate-form">
+                    <h3>Add New Affiliate</h3>
+                    <form id="affiliateForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="affiliateName">Affiliate Name</label>
+                                <input type="text" id="affiliateName" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="affiliateEmail">Email</label>
+                                <input type="email" id="affiliateEmail" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="affiliatePhone">Phone</label>
+                                <input type="tel" id="affiliatePhone" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="affiliateCommission">Commission Rate (%)</label>
+                                <input type="number" id="affiliateCommission" min="0" max="100" step="0.1" required>
+                            </div>
+                        </div>
+                        <button type="submit" class="submit-btn">Create Affiliate</button>
+                    </form>
+                </div>
+
+                <div class="affiliate-list">
+                    <h3>Active Affiliates</h3>
+                    <table class="affiliate-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th>Commission</th>
+                                <th>Affiliate Link</th>
+                                <th>Leads Generated</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="affiliateTableBody">
+                            <!-- Affiliate data will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Lead Management Tab -->
+            <div id="leadsTab" class="tab-content">
+                <div class="lead-filters">
+                    <h3>Filter Leads</h3>
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label for="filterAffiliate">Affiliate</label>
+                            <select id="filterAffiliate">
+                                <option value="">All Affiliates</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="filterPropertyType">Property Type</label>
+                            <select id="filterPropertyType">
+                                <option value="">All Types</option>
+                                <option value="Beachfront">Beachfront</option>
+                                <option value="Island">Island</option>
+                                <option value="Mainland">Mainland</option>
+                                <option value="Residential Home">Residential Home</option>
+                                <option value="Condo/Apartment">Condo/Apartment</option>
+                                <option value="Land">Land</option>
+                                <option value="Commercial">Commercial</option>
+                                <option value="Investment Property">Investment Property</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="filterDateFrom">Date From</label>
+                            <input type="date" id="filterDateFrom">
+                        </div>
+                        <div class="filter-group">
+                            <label for="filterDateTo">Date To</label>
+                            <input type="date" id="filterDateTo">
+                        </div>
+                        <div class="filter-group">
+                            <button type="button" class="export-btn" onclick="exportLeads()">Export CSV</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lead-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th>Property Type</th>
+                                <th>Budget</th>
+                                <th>Timeframe</th>
+                                <th>Affiliate</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leadTableBody">
+                            <!-- Lead data will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Analytics Tab -->
+            <div id="analyticsTab" class="tab-content">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h4>Top Performing Affiliates</h4>
+                        <div id="topAffiliates">
+                            <!-- Top affiliates will be populated here -->
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Property Type Preferences</h4>
+                        <div id="propertyPreferences">
+                            <!-- Property preferences will be populated here -->
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Monthly Lead Trends</h4>
+                        <div id="monthlyTrends">
+                            <!-- Monthly trends will be populated here -->
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Budget Distribution</h4>
+                        <div id="budgetDistribution">
+                            <!-- Budget distribution will be populated here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyB52c9xY0eH7fOy0B0D53_2jxnSurigS1M",
+            authDomain: "vip-affiliates-d265a.firebaseapp.com",
+            projectId: "vip-affiliates-d265a",
+            storageBucket: "vip-affiliates-d265a.appspot.com",
+            messagingSenderId: "556620380247",
+            appId: "1:556620380247:web:affiliate-system"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // Check authentication state
+        auth.onAuthStateChanged(function(user) {
+            if (user) {
+                showDashboard();
+                loadDashboardData();
+            } else {
+                showLogin();
+            }
+        });
+
+        // Login form handler
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const messageDiv = document.getElementById('loginMessage');
+            
+            try {
+                await auth.signInWithEmailAndPassword(email, password);
+                messageDiv.innerHTML = '<div class="message success">Login successful!</div>';
+            } catch (error) {
+                messageDiv.innerHTML = '<div class="message error">Login failed: ' + error.message + '</div>';
+            }
+        });
+
+        // Logout function
+        function logout() {
+            auth.signOut();
+        }
+
+        // Show/hide sections
+        function showDashboard() {
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('adminDashboard').style.display = 'block';
+        }
+
+        function showLogin() {
+            document.getElementById('loginSection').style.display = 'flex';
+            document.getElementById('adminDashboard').style.display = 'none';
+        }
+
+        // Tab management
+        function showTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName + 'Tab').classList.add('active');
+            event.target.classList.add('active');
+            
+            // Load tab-specific data
+            if (tabName === 'affiliates') {
+                loadAffiliates();
+            } else if (tabName === 'leads') {
+                loadLeads();
+            } else if (tabName === 'analytics') {
+                loadAnalytics();
+            }
+        }
+
+        // Load dashboard data
+        async function loadDashboardData() {
+            try {
+                // Load stats
+                const leadsSnapshot = await db.collection('leads').get();
+                const affiliatesSnapshot = await db.collection('affiliates').get();
+                
+                document.getElementById('totalLeads').textContent = leadsSnapshot.size;
+                document.getElementById('totalAffiliates').textContent = affiliatesSnapshot.size;
+                
+                // Calculate monthly leads
+                const now = new Date();
+                const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+                const monthlyLeads = leadsSnapshot.docs.filter(doc => {
+                    const leadDate = doc.data().timestamp.toDate();
+                    return leadDate >= startOfMonth;
+                }).length;
+                
+                document.getElementById('monthlyLeads').textContent = monthlyLeads;
+                
+                // Calculate conversion rate (placeholder - you can define your own logic)
+                const conversionRate = Math.round((monthlyLeads / 100) * 100); // Example calculation
+                document.getElementById('conversionRate').textContent = conversionRate + '%';
+                
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+            }
+        }
+
+        // Affiliate management
+        document.getElementById('affiliateForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const affiliateData = {
+                name: document.getElementById('affiliateName').value,
+                email: document.getElementById('affiliateEmail').value,
+                phone: document.getElementById('affiliatePhone').value,
+                commission: parseFloat(document.getElementById('affiliateCommission').value),
+                affiliateId: generateAffiliateId(),
+                createdAt: new Date(),
+                leadsGenerated: 0
+            };
+            
+            try {
+                await db.collection('affiliates').add(affiliateData);
+                document.getElementById('affiliateForm').reset();
+                loadAffiliates();
+                alert('Affiliate created successfully!');
+            } catch (error) {
+                console.error('Error creating affiliate:', error);
+                alert('Error creating affiliate: ' + error.message);
+            }
+        });
+
+        // Generate unique affiliate ID
+        function generateAffiliateId() {
+            return 'AFF_' + Math.random().toString(36).substr(2, 9).toUpperCase();
+        }
+
+        // Load affiliates
+        async function loadAffiliates() {
+            try {
+                const snapshot = await db.collection('affiliates').get();
+                const tableBody = document.getElementById('affiliateTableBody');
+                tableBody.innerHTML = '';
+                
+                snapshot.forEach(doc => {
+                    const affiliate = doc.data();
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${affiliate.name}</td>
+                        <td>${affiliate.email}</td>
+                        <td>${affiliate.phone}</td>
+                        <td>${affiliate.commission}%</td>
+                        <td>
+                            <input type="text" value="${window.location.origin}?affiliate=${affiliate.affiliateId}" readonly style="width: 200px; font-size: 0.8rem;">
+                            <button class="copy-link" onclick="copyToClipboard('${window.location.origin}?affiliate=${affiliate.affiliateId}')">Copy</button>
+                        </td>
+                        <td>${affiliate.leadsGenerated || 0}</td>
+                        <td>
+                            <button class="delete-btn" onclick="deleteAffiliate('${doc.id}')">Delete</button>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Error loading affiliates:', error);
+            }
+        }
+
+        // Copy to clipboard
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Link copied to clipboard!');
+            });
+        }
+
+        // Delete affiliate
+        async function deleteAffiliate(affiliateId) {
+            if (confirm('Are you sure you want to delete this affiliate?')) {
+                try {
+                    await db.collection('affiliates').doc(affiliateId).delete();
+                    loadAffiliates();
+                    alert('Affiliate deleted successfully!');
+                } catch (error) {
+                    console.error('Error deleting affiliate:', error);
+                    alert('Error deleting affiliate: ' + error.message);
+                }
+            }
+        }
+
+        // Load leads
+        async function loadLeads() {
+            try {
+                const snapshot = await db.collection('leads').orderBy('timestamp', 'desc').get();
+                const tableBody = document.getElementById('leadTableBody');
+                tableBody.innerHTML = '';
+                
+                snapshot.forEach(doc => {
+                    const lead = doc.data();
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${lead.timestamp.toDate().toLocaleDateString()}</td>
+                        <td>${lead.name}</td>
+                        <td>${lead.email}</td>
+                        <td>${lead.phone}</td>
+                        <td>${lead.propertyType}</td>
+                        <td>${lead.budget}</td>
+                        <td>${lead.timeframe}</td>
+                        <td>${lead.affiliateId}</td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Error loading leads:', error);
+            }
+        }
+
+        // Export leads to CSV
+        function exportLeads() {
+            // Implementation for CSV export
+            alert('CSV export functionality would be implemented here');
+        }
+
+        // Load analytics
+        async function loadAnalytics() {
+            try {
+                // Load top affiliates
+                const affiliatesSnapshot = await db.collection('affiliates').orderBy('leadsGenerated', 'desc').limit(5).get();
+                const topAffiliatesDiv = document.getElementById('topAffiliates');
+                topAffiliatesDiv.innerHTML = '';
+                
+                affiliatesSnapshot.forEach(doc => {
+                    const affiliate = doc.data();
+                    const div = document.createElement('div');
+                    div.innerHTML = `<p>${affiliate.name}: ${affiliate.leadsGenerated || 0} leads</p>`;
+                    topAffiliatesDiv.appendChild(div);
+                });
+                
+                // Load property preferences
+                const leadsSnapshot = await db.collection('leads').get();
+                const propertyCounts = {};
+                
+                leadsSnapshot.forEach(doc => {
+                    const propertyType = doc.data().propertyType;
+                    propertyCounts[propertyType] = (propertyCounts[propertyType] || 0) + 1;
+                });
+                
+                const propertyPreferencesDiv = document.getElementById('propertyPreferences');
+                propertyPreferencesDiv.innerHTML = '';
+                
+                Object.entries(propertyCounts).forEach(([type, count]) => {
+                    const div = document.createElement('div');
+                    div.innerHTML = `<p>${type}: ${count}</p>`;
+                    propertyPreferencesDiv.appendChild(div);
+                });
+                
+            } catch (error) {
+                console.error('Error loading analytics:', error);
+            }
+        }
+
+        // Filter leads
+        document.getElementById('filterAffiliate').addEventListener('change', loadLeads);
+        document.getElementById('filterPropertyType').addEventListener('change', loadLeads);
+        document.getElementById('filterDateFrom').addEventListener('change', loadLeads);
+        document.getElementById('filterDateTo').addEventListener('change', loadLeads);
+    </script>
+</body>
+</html> 
