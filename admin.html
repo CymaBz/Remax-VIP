@@ -835,27 +835,62 @@
         // Load leads
         async function loadLeads() {
             try {
-                const snapshot = await db.collection('leads').orderBy('timestamp', 'desc').get();
+                const snapshot = await db.collection('leads').get();
                 const tableBody = document.getElementById('leadTableBody');
                 tableBody.innerHTML = '';
                 
+                // Convert to array and sort by timestamp (newest first)
+                const leads = [];
                 snapshot.forEach(doc => {
                     const lead = doc.data();
+                    lead.id = doc.id;
+                    leads.push(lead);
+                });
+                
+                // Sort by timestamp (newest first)
+                leads.sort((a, b) => {
+                    const dateA = a.timestamp ? (a.timestamp.toDate ? a.timestamp.toDate() : new Date(a.timestamp)) : new Date(0);
+                    const dateB = b.timestamp ? (b.timestamp.toDate ? b.timestamp.toDate() : new Date(b.timestamp)) : new Date(0);
+                    return dateB - dateA;
+                });
+                
+                leads.forEach(lead => {
                     const row = document.createElement('tr');
+                    
+                    // Handle timestamp formatting
+                    let dateStr = 'N/A';
+                    if (lead.timestamp) {
+                        try {
+                            if (lead.timestamp.toDate) {
+                                // Firestore timestamp
+                                dateStr = lead.timestamp.toDate().toLocaleDateString();
+                            } else {
+                                // ISO string or other format
+                                dateStr = new Date(lead.timestamp).toLocaleDateString();
+                            }
+                        } catch (e) {
+                            dateStr = 'Invalid Date';
+                        }
+                    }
+                    
                     row.innerHTML = `
-                        <td>${lead.timestamp.toDate().toLocaleDateString()}</td>
-                        <td>${lead.name}</td>
-                        <td>${lead.email}</td>
-                        <td>${lead.phone}</td>
-                        <td>${lead.propertyType}</td>
-                        <td>${lead.budget}</td>
-                        <td>${lead.timeframe}</td>
-                        <td>${lead.affiliateId}</td>
+                        <td>${dateStr}</td>
+                        <td>${lead.name || 'N/A'}</td>
+                        <td>${lead.email || 'N/A'}</td>
+                        <td>${lead.phone || 'N/A'}</td>
+                        <td>${lead.propertyType || 'N/A'}</td>
+                        <td>${lead.budget || 'N/A'}</td>
+                        <td>${lead.timeframe || 'N/A'}</td>
+                        <td>${lead.affiliateId || 'direct'}</td>
                     `;
                     tableBody.appendChild(row);
                 });
+                
+                console.log(`Loaded ${leads.length} leads`);
             } catch (error) {
                 console.error('Error loading leads:', error);
+                const tableBody = document.getElementById('leadTableBody');
+                tableBody.innerHTML = '<tr><td colspan="8">Error loading leads. Check console for details.</td></tr>';
             }
         }
 
