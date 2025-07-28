@@ -765,29 +765,38 @@ Submitted: ${new Date().toLocaleString()}`
                 
                 // Store lead data in Firestore (optional - for admin panel)
                 try {
+                    // First try to store the lead
                     const docRef = await db.collection('leads').add(formData);
                     console.log('Lead stored successfully with ID:', docRef.id);
                     
-                    // Update affiliate's lead count if affiliate exists
-                    if (formData.affiliateId !== 'direct') {
+                    // Then update affiliate's lead count if affiliate exists
+                    if (formData.affiliateId && formData.affiliateId !== 'direct') {
                         console.log('Updating affiliate lead count for:', formData.affiliateId);
-                        const affiliateQuery = await db.collection('affiliates')
-                            .where('affiliateId', '==', formData.affiliateId)
-                            .get();
                         
-                        if (!affiliateQuery.empty) {
-                            const affiliateDoc = affiliateQuery.docs[0];
-                            const currentLeads = affiliateDoc.data().leadsGenerated || 0;
+                        // Use a simpler approach - find and update the affiliate
+                        const affiliatesRef = db.collection('affiliates');
+                        const query = affiliatesRef.where('affiliateId', '==', formData.affiliateId);
+                        const snapshot = await query.get();
+                        
+                        if (!snapshot.empty) {
+                            // Get the first matching affiliate
+                            const affiliateDoc = snapshot.docs[0];
+                            const affiliateData = affiliateDoc.data();
+                            const currentLeads = affiliateData.leadsGenerated || 0;
+                            
+                            // Update the lead count
                             await affiliateDoc.ref.update({
                                 leadsGenerated: currentLeads + 1
                             });
-                            console.log('Affiliate lead count updated successfully');
+                            
+                            console.log(`Affiliate lead count updated: ${currentLeads} → ${currentLeads + 1}`);
                         } else {
                             console.log('No affiliate found with ID:', formData.affiliateId);
                         }
                     }
                 } catch (dbError) {
-                    console.log('Database storage failed, but email was sent:', dbError);
+                    console.error('Database operation failed:', dbError);
+                    console.log('Email was still sent successfully');
                     // Don't fail the whole form if database fails
                 }
                 
