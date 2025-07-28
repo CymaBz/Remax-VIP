@@ -713,8 +713,8 @@
                 propertyType: document.getElementById('propertyType').value,
                 timeframe: document.getElementById('timeframe').value,
                 budget: document.getElementById('budget').value,
-                affiliateId: sessionStorage.getItem('affiliateId'),
-                timestamp: new Date().toISOString(),
+                affiliateId: sessionStorage.getItem('affiliateId') || 'direct',
+                timestamp: firebase.firestore.Timestamp.now(),
                 userAgent: navigator.userAgent,
                 referrer: document.referrer
             };
@@ -726,11 +726,15 @@
             errorMessage.style.display = 'none';
             
             try {
+                console.log('Submitting form data:', formData);
+                
                 // Store lead data directly in Firestore
-                await db.collection('leads').add(formData);
+                const docRef = await db.collection('leads').add(formData);
+                console.log('Lead stored successfully with ID:', docRef.id);
                 
                 // Update affiliate's lead count if affiliate exists
                 if (formData.affiliateId !== 'direct') {
+                    console.log('Updating affiliate lead count for:', formData.affiliateId);
                     const affiliateQuery = await db.collection('affiliates')
                         .where('affiliateId', '==', formData.affiliateId)
                         .get();
@@ -741,6 +745,9 @@
                         await affiliateDoc.ref.update({
                             leadsGenerated: currentLeads + 1
                         });
+                        console.log('Affiliate lead count updated successfully');
+                    } else {
+                        console.log('No affiliate found with ID:', formData.affiliateId);
                     }
                 }
                 
@@ -758,19 +765,22 @@
                 }, 3000);
                 
             } catch (error) {
-                console.error('Error submitting form:', error);
+                console.error('Detailed error submitting form:', error);
+                console.error('Error code:', error.code);
+                console.error('Error message:', error.message);
                 
-                // Show error message
+                // Show error message with more details
                 loading.style.display = 'none';
+                errorMessage.innerHTML = '<p>Sorry, there was an error submitting your inquiry. Error: ' + error.message + '</p>';
                 errorMessage.style.display = 'block';
                 
                 // Re-enable submit button
                 submitBtn.disabled = false;
                 
-                // Hide error message after 5 seconds
+                // Hide error message after 10 seconds
                 setTimeout(() => {
                     errorMessage.style.display = 'none';
-                }, 5000);
+                }, 10000);
             }
         });
 
