@@ -835,13 +835,21 @@
         // Load leads
         async function loadLeads() {
             try {
-                const snapshot = await db.collection('leads').get();
+                const leadsSnapshot = await db.collection('leads').get();
+                const affiliatesSnapshot = await db.collection('affiliates').get();
                 const tableBody = document.getElementById('leadTableBody');
                 tableBody.innerHTML = '';
                 
-                // Convert to array and sort by timestamp (newest first)
+                // Create a map of affiliate IDs to names
+                const affiliateMap = {};
+                affiliatesSnapshot.forEach(doc => {
+                    const affiliate = doc.data();
+                    affiliateMap[affiliate.affiliateId] = affiliate.name;
+                });
+                
+                // Convert leads to array and sort by timestamp (newest first)
                 const leads = [];
-                snapshot.forEach(doc => {
+                leadsSnapshot.forEach(doc => {
                     const lead = doc.data();
                     lead.id = doc.id;
                     leads.push(lead);
@@ -873,6 +881,12 @@
                         }
                     }
                     
+                    // Get affiliate name from the map
+                    let affiliateName = 'Direct';
+                    if (lead.affiliateId && lead.affiliateId !== 'direct') {
+                        affiliateName = affiliateMap[lead.affiliateId] || `Unknown (${lead.affiliateId})`;
+                    }
+                    
                     row.innerHTML = `
                         <td>${dateStr}</td>
                         <td>${lead.name || 'N/A'}</td>
@@ -881,7 +895,7 @@
                         <td>${lead.propertyType || 'N/A'}</td>
                         <td>${lead.budget || 'N/A'}</td>
                         <td>${lead.timeframe || 'N/A'}</td>
-                        <td>${lead.affiliateId || 'direct'}</td>
+                        <td>${affiliateName}</td>
                     `;
                     tableBody.appendChild(row);
                 });
