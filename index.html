@@ -8,7 +8,6 @@
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-functions-compat.js"></script>
     
     <style>
         * {
@@ -686,7 +685,6 @@
         // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
-        const functions = firebase.functions();
 
         // Get affiliate ID from URL parameters
         function getAffiliateId() {
@@ -728,9 +726,23 @@
             errorMessage.style.display = 'none';
             
             try {
-                // Call Firebase Cloud Function to handle form submission
-                const submitLead = functions.httpsCallable('submitLead');
-                const result = await submitLead(formData);
+                // Store lead data directly in Firestore
+                await db.collection('leads').add(formData);
+                
+                // Update affiliate's lead count if affiliate exists
+                if (formData.affiliateId !== 'direct') {
+                    const affiliateQuery = await db.collection('affiliates')
+                        .where('affiliateId', '==', formData.affiliateId)
+                        .get();
+                    
+                    if (!affiliateQuery.empty) {
+                        const affiliateDoc = affiliateQuery.docs[0];
+                        const currentLeads = affiliateDoc.data().leadsGenerated || 0;
+                        await affiliateDoc.ref.update({
+                            leadsGenerated: currentLeads + 1
+                        });
+                    }
+                }
                 
                 // Show success message
                 loading.style.display = 'none';
