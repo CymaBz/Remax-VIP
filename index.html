@@ -9,6 +9,9 @@
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
     
+    <!-- EmailJS SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    
     <style>
         * {
             margin: 0;
@@ -685,6 +688,9 @@
         // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
+        
+        // Initialize EmailJS
+        emailjs.init("5WK9bdlvBkt1PmYJW"); // Your EmailJS user ID
 
         // Get affiliate ID from URL parameters
         function getAffiliateId() {
@@ -728,27 +734,61 @@
             try {
                 console.log('Submitting form data:', formData);
                 
-                // Store lead data directly in Firestore
-                const docRef = await db.collection('leads').add(formData);
-                console.log('Lead stored successfully with ID:', docRef.id);
-                
-                // Update affiliate's lead count if affiliate exists
-                if (formData.affiliateId !== 'direct') {
-                    console.log('Updating affiliate lead count for:', formData.affiliateId);
-                    const affiliateQuery = await db.collection('affiliates')
-                        .where('affiliateId', '==', formData.affiliateId)
-                        .get();
+                // Send email using EmailJS
+                const emailParams = {
+                    to_email: 'chris@remaxvipbelize.com',
+                    from_name: formData.name,
+                    from_email: formData.email,
+                    phone: formData.phone,
+                    property_type: formData.propertyType,
+                    timeframe: formData.timeframe,
+                    budget: formData.budget,
+                    affiliate_id: formData.affiliateId,
+                    message: `New lead from ${formData.name}
                     
-                    if (!affiliateQuery.empty) {
-                        const affiliateDoc = affiliateQuery.docs[0];
-                        const currentLeads = affiliateDoc.data().leadsGenerated || 0;
-                        await affiliateDoc.ref.update({
-                            leadsGenerated: currentLeads + 1
-                        });
-                        console.log('Affiliate lead count updated successfully');
-                    } else {
-                        console.log('No affiliate found with ID:', formData.affiliateId);
+Property Type: ${formData.propertyType}
+Timeframe: ${formData.timeframe}
+Budget: ${formData.budget}
+Phone: ${formData.phone}
+Email: ${formData.email}
+Affiliate ID: ${formData.affiliateId}
+Submitted: ${new Date().toLocaleString()}`
+                };
+                
+                // Send email
+                await emailjs.send(
+                    'service_xwrfadb',    // Your EmailJS service ID
+                    'template_0qwogid',   // Your EmailJS template ID
+                    emailParams
+                );
+                console.log('Email sent successfully');
+                
+                // Store lead data in Firestore (optional - for admin panel)
+                try {
+                    const docRef = await db.collection('leads').add(formData);
+                    console.log('Lead stored successfully with ID:', docRef.id);
+                    
+                    // Update affiliate's lead count if affiliate exists
+                    if (formData.affiliateId !== 'direct') {
+                        console.log('Updating affiliate lead count for:', formData.affiliateId);
+                        const affiliateQuery = await db.collection('affiliates')
+                            .where('affiliateId', '==', formData.affiliateId)
+                            .get();
+                        
+                        if (!affiliateQuery.empty) {
+                            const affiliateDoc = affiliateQuery.docs[0];
+                            const currentLeads = affiliateDoc.data().leadsGenerated || 0;
+                            await affiliateDoc.ref.update({
+                                leadsGenerated: currentLeads + 1
+                            });
+                            console.log('Affiliate lead count updated successfully');
+                        } else {
+                            console.log('No affiliate found with ID:', formData.affiliateId);
+                        }
                     }
+                } catch (dbError) {
+                    console.log('Database storage failed, but email was sent:', dbError);
+                    // Don't fail the whole form if database fails
                 }
                 
                 // Show success message
