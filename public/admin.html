@@ -778,8 +778,8 @@
                         <td>${affiliate.phone}</td>
                         <td>${affiliate.commission}%</td>
                         <td>
-                            <input type="text" value="https://cymabz.github.io/Remax-VIP/?affiliate=${affiliate.affiliateId}" readonly style="width: 200px; font-size: 0.8rem;">
-                            <button class="copy-link" onclick="copyToClipboard('https://cymabz.github.io/Remax-VIP/?affiliate=${affiliate.affiliateId}')">Copy</button>
+                            <input type="text" value="${window.location.origin}?affiliate=${affiliate.affiliateId}" readonly style="width: 200px; font-size: 0.8rem;">
+                            <button class="copy-link" onclick="copyToClipboard('${window.location.origin}?affiliate=${affiliate.affiliateId}')">Copy</button>
                         </td>
                         <td>${affiliate.leadsGenerated || 0}</td>
                         <td>

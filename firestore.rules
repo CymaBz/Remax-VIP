@@ -4,23 +4,23 @@ service cloud.firestore {
     // Allow public read access to affiliates (for affiliate link validation)
     match /affiliates/{affiliateId} {
       allow read: if true;
-      allow write: if request.auth != null && request.auth.token.admin == true;
+      allow write: if request.auth != null;
     }
     
     // Allow public write access to leads (for form submissions)
     match /leads/{leadId} {
       allow create: if true;
-      allow read, write: if request.auth != null && request.auth.token.admin == true;
+      allow read, write: if request.auth != null;
     }
     
     // Admin-only access to analytics and other admin data
     match /analytics/{document=**} {
-      allow read, write: if request.auth != null && request.auth.token.admin == true;
+      allow read, write: if request.auth != null;
     }
     
     // Admin-only access to system settings
     match /settings/{document=**} {
-      allow read, write: if request.auth != null && request.auth.token.admin == true;
+      allow read, write: if request.auth != null;
     }
   }
 } 
