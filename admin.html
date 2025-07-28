@@ -766,11 +766,29 @@
         async function loadAffiliates() {
             try {
                 const snapshot = await db.collection('affiliates').get();
+                const leadsSnapshot = await db.collection('leads').get();
                 const tableBody = document.getElementById('affiliateTableBody');
                 tableBody.innerHTML = '';
                 
+                // Count leads for each affiliate
+                const leadCounts = {};
+                leadsSnapshot.forEach(doc => {
+                    const lead = doc.data();
+                    const affiliateId = lead.affiliateId;
+                    if (affiliateId && affiliateId !== 'direct') {
+                        leadCounts[affiliateId] = (leadCounts[affiliateId] || 0) + 1;
+                    }
+                });
+                
                 snapshot.forEach(doc => {
                     const affiliate = doc.data();
+                    const actualLeadCount = leadCounts[affiliate.affiliateId] || 0;
+                    
+                    // Update the affiliate's lead count in database if it's different
+                    if (actualLeadCount !== (affiliate.leadsGenerated || 0)) {
+                        doc.ref.update({ leadsGenerated: actualLeadCount });
+                    }
+                    
                     const row = document.createElement('tr');
                     row.innerHTML = `
                         <td>${affiliate.name}</td>
@@ -781,7 +799,7 @@
                             <input type="text" value="https://cymabz.github.io/Remax-VIP/?affiliate=${affiliate.affiliateId}" readonly style="width: 200px; font-size: 0.8rem;">
                             <button class="copy-link" onclick="copyToClipboard('https://cymabz.github.io/Remax-VIP/?affiliate=${affiliate.affiliateId}')">Copy</button>
                         </td>
-                        <td>${affiliate.leadsGenerated || 0}</td>
+                        <td>${actualLeadCount}</td>
                         <td>
                             <button class="delete-btn" onclick="deleteAffiliate('${doc.id}')">Delete</button>
                         </td>
